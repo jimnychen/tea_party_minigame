@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜歌大挑戰-遊戲說明</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 50px;
+            font-size: 26px;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            max-width: 600px;
+            margin: 0 auto 20px;
+            line-height: 1.6;
+            color: #555;
+        }
+        .button-container {
+            margin-top: 30px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #1E88E5;
+        }
+        button#testBtn {
+            background-color: #4CAF50;
+        }
+        button#testBtn.playing {
+            background-color: #f44336;
+        }
+        #volumeMeter {
+            width: 400px;
+            height: 30px;
+            margin: 20px auto;
+            background-color: #ddd;
+            border-radius: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        #volumeBar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #FFEB3B, #f44336);
+            transition: width 0.1s;
+        }
+    </style>
+</head>
+<body>
+    <h1>猜歌大挑戰-遊戲說明</h1>
+    <h2>遊戲規則：</h2>
+    <p>
+        音樂開始撥放時，所有人都可以舉手搶答，主持人會選<strong>舉手最快</strong>的人。<br>
+        猜對作品、歌名、團體、歌手、作者，每猜對一個<strong>都</strong>可以加一分，<br>
+        舉手被選中的人可以<strong>每項都各猜一次</strong>，<br>
+        只要猜錯一題就會<strong>重新開始舉手搶答或撥下一段音樂</strong>。
+    </p>
+
+    <!-- 音量測試區塊 -->
+    <div style="margin: 40px 0;">
+        <button id="testBtn">開始音量測試</button>
+        <p style="font-size: 20px; color: #666;">點擊按鈕播放測試音樂，請調整您的音量到適當大小</p>
+        <div id="volumeMeter">
+            <div id="volumeBar"></div>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button onclick="navigate('/SongGuessingGame')">開始遊戲</button>
+    </div>
+
+    <script>
+        function navigate(href) {
+            window.location.href = href;
+        }
+
+        // ==================== 音量測試功能 ====================
+        const testBtn = document.getElementById('testBtn');
+        const volumeMeter = document.getElementById('volumeMeter');
+        const volumeBar = document.getElementById('volumeBar');
+
+        let audioContext;
+        let mediaStreamSource;
+        let analyser;
+        let animationId;
+        let audio;
+
+        // 在這裡設定您的測試音樂檔案與播放區間（單位：秒）
+        const TEST_MUSIC_URL = './../src/sound-test/陳惟毅 - 大香蕉 big banana  不專業自製歌詞動畫版-256x144-avc1-opus.mp4';  // ← 請改成您的音樂檔案路徑
+        const START_TIME = 108;   // 從第 30 秒開始播放
+        const END_TIME = 123;     // 播放到第 50 秒結束（總長 20 秒）
+
+        testBtn.addEventListener('click', async () => {
+            if (audio && !audio.paused) {
+                // 正在播放 → 停止
+                stopAudio();
+                return;
+            }
+
+            // 開始播放
+            testBtn.textContent = '停止測試';
+            testBtn.classList.add('playing');
+            volumeMeter.style.display = 'block';
+
+            // 建立 Audio
+            audio = new Audio(TEST_MUSIC_URL);
+            audio.currentTime = START_TIME;
+            audio.volume = 1.0;
+
+            // 當到達結束時間或自然結束時停止
+            audio.onended = stopAudio;
+            audio.ontimeupdate = () => {
+                if (audio.currentTime >= END_TIME) {
+                    stopAudio();
+                }
+            };
+
+            // 初始化 Web Audio API 音量偵測
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+
+                // 取得麥克風？不，我們要偵測播放的音訊輸出
+                // 直接從 audio element 連接
+                const source = audioContext.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+
+                audio.play();
+
+                // 開始偵測音量
+                detectVolume();
+            } catch (e) {
+                alert('您的瀏覽器不支援音量偵測功能，或無法取得音訊輸出');
+                stopAudio();
+            }
+        });
+
+        function detectVolume() {
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const update = () => {
+                if (!audio || audio.paused) return;
+
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const average = sum / bufferLength;
+                const percentage = Math.min(100, (average / 255) * 200); // 放大一點讓反應更明顯
+
+                volumeBar.style.width = percentage + '%';
+
+                animationId = requestAnimationFrame(update);
+            };
+            update();
+        }
+
+        function stopAudio() {
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+                audio = null;
+            }
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+
+            testBtn.textContent = '開始音量測試';
+            testBtn.classList.remove('playing');
+            volumeBar.style.width = '0%';
+            volumeMeter.style.display = 'none';
+        }
+        // ====================================================
+    </script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜歌大挑戰</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+            font-size: 26px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #video-container {
+            margin: 20px 0;
+            max-width: 80%;
+            max-height: 80%;
+            min-width: 1000px;
+            position: relative;
+        }
+        #question-video {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            display: none;
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        #answer {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2196F3;
+            display: none;
+        }
+        .ans-button {
+            background-color: #c033c2;
+        }
+        .ans-button:hover {
+            background-color: #935190;
+        }
+        .segment-button {
+            background-color: #2196F3;
+        }
+        .segment-button:hover {
+            background-color: #1976D2;
+        }
+        .back-button {
+            background-color: #f44336;
+        }
+        .back-button:hover {
+            background-color: #d32f2f;
+        }
+        .question-info {
+            position: absolute;
+            top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #current-question {
+            left: 20px;
+        }
+        #total-questions {
+            right: 20px;
+        }
+
+        /* 新增：左右側跳舞 GIF 樣式 */
+        .dancing-gif {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 400px; /* 可調整大小 */
+            height: auto;
+            opacity: 0.9;
+            pointer-events: none; /* 不擋住點擊 */
+            display: none; /* 初始隱藏 */
+            z-index: 10;
+        }
+        #left-gif {
+            left: -30%
+        }
+        #right-gif {
+            right: -30%;
+        }
+    </style>
+</head>
+<body>
+    <div id="current-question" class="question-info">目前第 1 題</div>
+    <div id="total-questions" class="question-info">(1 / 總題數)</div>
+    <h1>猜歌大挑戰</h1>
+    <div id="video-container">
+        <video id="question-video" src="" controls></video>
+        <!-- 左右 GIF 圖片 -->
+        <img id="left-gif" class="dancing-gif" src="" alt="左側跳舞GIF">
+        <img id="right-gif" class="dancing-gif" src="" alt="右側跳舞GIF">
+    </div>
+    <div id="answer"></div>
+    <div class="button-container">
+        <button id="prev-button" onclick="previousQuestion()">上一題</button>
+        <button id="next-button" onclick="nextQuestion()">下一題</button>
+        <button class="segment-button" onclick="playSegment(1)">第一段</button>
+        <button class="segment-button" onclick="playSegment(2)">第二段</button>
+        <button class="segment-button" onclick="playSegment(3)">第三段</button>
+        <button id="stop-button" onclick="stopPlaybackManually()" style="display: none; background-color: #ff5722;">停止播放</button>
+    </div>
+    <div>
+        <button class="ans-button" onclick="revealAnswer()">揭露答案</button>
+        <button class="back-button" onclick="backToHome()">回到主頁面</button>
+    </div>
+
+    <script>
+        const folderPath = './../question_bank/SongQuestionBank/';
+
+        let currentIndex = 0;
+        let 猜歌大挑戰題庫 = []; // 從 API 讀取
+        let totalQuestions = 0; // 動態更新
+        const video = document.getElementById('question-video');
+
+        // 從 API 讀取題目
+        async function loadQuestionData() {
+            try {
+                const response = await fetch('/api/Song');
+                if (!response.ok) {
+                    throw new Error('讀取 API 失敗');
+                }
+                猜歌大挑戰題庫 = await response.json();
+                totalQuestions = 猜歌大挑戰題庫.length;
+                console.log('題庫已載入:', 猜歌大挑戰題庫);
+                
+                // 載入第一題
+                loadVideo();
+            } catch (error) {
+                console.error('讀取題庫失敗:', error);
+                alert('無法讀取題庫，請確認伺服器是否正常運行！');
+            }
+        }
+
+        // 頁面載入時自動讀取 API
+        document.addEventListener('DOMContentLoaded', loadQuestionData);
+        const stopButton = document.getElementById('stop-button');
+        const leftGif = document.getElementById('left-gif');
+        const rightGif = document.getElementById('right-gif');
+
+        let isPlaying = false;
+
+        // === 這裡設定您的 GIF 總數 ===
+        const totalGifCount = 23;  // 改成您實際有的 GIF 數量，例如 1.gif ~ 20.gif
+
+        // 自動產生 GIF 路徑陣列
+        const dancingGifs = [];
+        for (let i = 1; i <= totalGifCount; i++) {
+            dancingGifs.push(`./../src/dance-gif/${i}.gif`);
+        }
+
+        // 無重複隨機選取邏輯
+        let shuffledGifs = []; // 會在第一次使用時初始化
+        let gifPointer = 0;
+
+        function initializeShuffledGifs() {
+            shuffledGifs = [...dancingGifs];
+            // Fisher-Yates shuffle
+            for (let i = shuffledGifs.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledGifs[i], shuffledGifs[j]] = [shuffledGifs[j], shuffledGifs[i]];
+            }
+            gifPointer = 0;
+        }
+
+        function getNextGif() {
+            if (shuffledGifs.length === 0 || gifPointer >= shuffledGifs.length) {
+                initializeShuffledGifs(); // 用完一輪就重新洗牌
+            }
+        return shuffledGifs[gifPointer++];
+    }
+
+        function showDancingGifs() {
+            leftGif.src = getNextGif();
+            rightGif.src = getNextGif();
+            leftGif.style.display = 'block';
+            rightGif.style.display = 'block';
+        }
+
+        function hideDancingGifs() {
+            leftGif.style.display = 'none';
+            rightGif.style.display = 'none';
+            leftGif.src = '';
+            rightGif.src = '';
+        }
+
+        function stopPlayback() {
+            if (isPlaying) {
+                video.pause();
+                isPlaying = false;
+            }
+            video.currentTime = 0;
+            video.style.display = 'none';
+            document.getElementById('answer').style.display = 'none';
+            stopButton.style.display = 'none';
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+            hideDancingGifs(); // 停止時隱藏 GIF
+        }
+
+        function stopPlaybackManually() {
+            stopPlayback();
+        }
+
+        function showStopButton() {
+            stopButton.style.display = 'inline-block';
+        }
+
+        let currentEnd = 0;
+        let currentLoop = false;
+        let currentStart = 0;
+
+        function handleTimeUpdate() {
+            if (video.currentTime >= currentEnd) {
+                if (currentLoop) {
+                    video.currentTime = currentStart;
+                } else {
+                    video.pause();
+                    isPlaying = false;
+                    stopButton.style.display = 'none';
+                    hideDancingGifs(); // 非循環結束隱藏 GIF
+                }
+            }
+        }
+
+        function loadVideo() {
+            if (totalQuestions === 0) {
+                video.src = '';
+                stopPlayback();
+                document.getElementById('current-question').textContent = '目前第 0 題';
+                document.getElementById('total-questions').textContent = '(0 / 0)';
+                alert('題庫中沒有影片，請檢查資料夾！');
+                return;
+            }
+
+            stopPlayback();
+            hideDancingGifs(); // 切題時確保隱藏
+
+            const item = 猜歌大挑戰題庫[currentIndex];
+            const filename = item.答案 || item;
+            const videoPath = folderPath + filename;
+            video.src = videoPath;
+
+            document.getElementById('current-question').textContent = '目前第 ' + (currentIndex + 1) + ' 題';
+            document.getElementById('total-questions').textContent = '(' + (currentIndex + 1) + ' / ' + totalQuestions + ')';
+
+            document.getElementById('prev-button').disabled = (currentIndex === 0);
+            document.getElementById('next-button').disabled = (currentIndex === totalQuestions - 1);
+        }
+
+        async function safePlay() {
+            try {
+                await video.play();
+                isPlaying = true;
+                showDancingGifs(); // 開始播放時顯示 GIF
+            } catch (err) {
+                console.warn('播放被中斷或阻擋:', err);
+                isPlaying = false;
+                hideDancingGifs();
+            }
+        }
+
+        function playSegment(segmentNum) {
+            const item = 猜歌大挑戰題庫[currentIndex];
+            let segment;
+            if (segmentNum === 1) segment = item.第一段;
+            else if (segmentNum === 2) segment = item.第二段;
+            else if (segmentNum === 3) segment = item.第三段;
+
+            if (!segment || typeof segment.開始 !== 'number' || typeof segment.結束 !== 'number' || segment.結束 <= segment.開始) {
+                alert('此段無效或未設定！');
+                return;
+            }
+
+            stopPlayback();
+
+            currentStart = segment.開始;
+            currentEnd = segment.結束;
+            currentLoop = segment.循環 || false;
+
+            video.currentTime = currentStart;
+            video.style.display = 'none';
+
+            safePlay().then(() => {
+                if (isPlaying) {
+                    showStopButton();
+                }
+            });
+
+            video.addEventListener('timeupdate', handleTimeUpdate);
+        }
+
+        function previousQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                loadVideo();
+            }
+        }
+
+        function nextQuestion() {
+            if (currentIndex < totalQuestions - 1) {
+                currentIndex++;
+                loadVideo();
+            }
+        }
+
+        function revealAnswer() {
+            if (totalQuestions === 0) return;
+            stopPlayback();
+
+            const item = 猜歌大挑戰題庫[currentIndex];
+            const filename = item.答案 || item;
+            //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
+            let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
+            document.getElementById('answer').textContent = '答案：' + answer;
+            document.getElementById('answer').style.display = 'block';
+
+            video.currentTime = 0;
+            video.style.display = 'block';
+
+            safePlay().then(() => {
+                if (isPlaying) {
+                    showStopButton();
+                }
+            });
+
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+
+            video.addEventListener('ended', handlePlaybackEnded, { once: true });
+        }
+
+        function handlePlaybackEnded() {
+            isPlaying = false;
+            stopButton.style.display = 'none';
+            hideDancingGifs(); // 完整播放結束隱藏 GIF
+        }
+
+        function backToHome() {
+            // 從伺服器請求預設首頁路由
+            fetch('/')
+                .then(response => response.json())
+                .then(data => {
+                    window.location.href = data.home || '/';
+                })
+                .catch(error => {
+                    console.warn('無法從 API 獲取首頁路由，使用預設值:', error);
+                    window.location.href = '/'; // 備用預設值
+                });
+        }
+
+        video.addEventListener('ended', handlePlaybackEnded);
+        video.addEventListener('pause', hideDancingGifs); // 手動暫停也隱藏
+    </script>
+</body>
+</html>

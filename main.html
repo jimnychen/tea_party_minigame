@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遊戲類型選擇</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 50px;
+            font-size: 18px;
+            margin: 0;
+            overflow: hidden; /* 避免大量 GIF 時出現滾動條 */
+        }
+        h1 {
+            color: #333;
+        }
+        .game-button-container {
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        .instruction-button-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: 0 auto 40px auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .instruction-button {
+            background-color: #2196F3;
+        }
+        .instruction-button:hover {
+            background-color: #1E88E5;
+        }
+        .separator {
+            margin: 30px 0;
+            font-size: 14px;
+            color: #777;
+        }
+        #createBtn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 9999999;
+        }
+        #createBtn:hover {
+            background: #45a049;
+        }
+        .floatingGif {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 999998;
+        }
+        #floatingGif {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 999998;
+        }
+
+        /* 新增：主持人按鈕（右下角浮動，好看又隱密） */
+        #hostBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: rgba(52, 152, 219, 0.9); /* 藍色半透明 */
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            z-index: 9999998;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        #hostBtn:hover {
+            background-color: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+        #hostBtn span {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1>歡迎來到遊戲世界！</h1>
+    <p>請選擇您想玩的遊戲類型：</p>
+    
+    <div class="game-button-container">
+        <button onclick="navigate('/CharacterGuessingGameInfo')">挖洞猜角色</button>
+        <button onclick="navigate('/SongGuessingGameInfo')">猜歌大挑戰</button>
+    </div>
+
+    <div class="separator">--- 或 ---</div>
+
+    <div class="instruction-button-container">
+        <p>如果您需要了解遊戲開始前的通用說明，請點擊下方：</p>
+        <button class="instruction-button" onclick="navigate('/mainINFO')">遊戲開始前說明</button>
+    </div>
+
+    <!-- 原有單一浮動 GIF -->
+    <img id="floatingGif" src="./src/spin-cat-1.gif" alt="floating">
+
+    <!-- 產生新貓貓的按鈕 -->
+    <button id="createBtn">危險！千萬不要點</button>
+
+    <script>
+        // GIF 路徑
+        const gifList = [
+            "./src/spin-cat-1.gif",
+            "./src/spin-cat-2.gif"
+        ];
+
+        const size = 200;
+
+        // 原有單一 GIF 動畫
+        const originalImg = document.getElementById('floatingGif');
+        let origX = Math.random() * (window.innerWidth - size);
+        let origY = Math.random() * (window.innerHeight - size);
+        let origVx = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
+        let origVy = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
+
+        function changeOriginalGif() {
+            originalImg.src = gifList[Math.floor(Math.random() * gifList.length)];
+        }
+
+        function animateOriginal() {
+            origX += origVx;
+            origY += origVy;
+
+            if (origX <= 0 || origX + size >= window.innerWidth) {
+                origVx = -origVx;
+                origX = Math.max(0, Math.min(origX, window.innerWidth - size));
+                changeOriginalGif();
+            }
+            if (origY <= 0 || origY + size >= window.innerHeight) {
+                origVy = -origVy;
+                origY = Math.max(0, Math.min(origY, window.innerHeight - size));
+                changeOriginalGif();
+            }
+
+            originalImg.style.left = origX + 'px';
+            originalImg.style.top = origY + 'px';
+
+            requestAnimationFrame(animateOriginal);
+        }
+        animateOriginal();
+
+        // 產生新浮動貓貓
+        function createFloatingCat() {
+            const img = document.createElement('img');
+            img.className = 'floatingGif';
+            img.src = gifList[Math.floor(Math.random() * gifList.length)];
+            document.body.appendChild(img);
+
+            let x = Math.random() * (window.innerWidth - size);
+            let y = Math.random() * (window.innerHeight - size);
+            let vx = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
+            let vy = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
+
+            function changeGif() {
+                img.src = gifList[Math.floor(Math.random() * gifList.length)];
+            }
+
+            function animate() {
+                x += vx;
+                y += vy;
+
+                if (x <= 0 || x + size >= window.innerWidth) {
+                    vx = -vx;
+                    x = Math.max(0, Math.min(x, window.innerWidth - size));
+                    changeGif();
+                }
+                if (y <= 0 || y + size >= window.innerHeight) {
+                    vy = -vy;
+                    y = Math.max(0, Math.min(y, window.innerHeight - size));
+                    changeGif();
+                }
+
+                img.style.left = x + 'px';
+                img.style.top = y + 'px';
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        document.getElementById('createBtn').addEventListener('click', createFloatingCat);
+
+        // 視窗縮放調整
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.floatingGif, #floatingGif').forEach(el => {
+                let currentX = parseFloat(el.style.left) || 0;
+                let currentY = parseFloat(el.style.top) || 0;
+                if (currentX + size > window.innerWidth) el.style.left = (window.innerWidth - size) + 'px';
+                if (currentY + size > window.innerHeight) el.style.top = (window.innerHeight - size) + 'px';
+            });
+        });
+
+        function navigate(href) {
+            window.location.href = href;
+        }
+    </script>
+</body>
+</html>

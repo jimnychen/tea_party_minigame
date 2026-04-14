@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主持人題目一覽</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        h2 {
+            color: #2980b9;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .note {
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 50px;
+        }
+        /* 保護機制樣式 */
+        #protection-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #protection-overlay h1 {
+            color: #e74c3c;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        #protection-overlay p {
+            font-size: 1.5em;
+            max-width: 800px;
+            margin-bottom: 40px;
+        }
+        #reveal-button {
+            padding: 15px 40px;
+            font-size: 1.8em;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: background-color 0.3s;
+        }
+        #reveal-button:hover {
+            background-color: #c0392b;
+        }
+        #content {
+            display: none; /* 一開始隱藏所有內容 */
+        }
+    </style>
+</head>
+<body>
+    <!-- 保護層 -->
+    <div id="protection-overlay">
+        <h1>⚠ 警告 ⚠</h1>
+        <p>此頁面包含所有遊戲答案<br>請確認螢幕遠離玩家，無人可偷看後再點擊下方按鈕</p>
+        <button id="reveal-button">點擊這裡顯示主持人題目一覽</button>
+    </div>
+
+    <!-- 主要內容 -->
+    <div id="content">
+        <h1>主持人題目一覽表</h1>
+
+        <h2>挖洞猜角色（共 <span id="role-count">0</span> 題）猜對作品名+1分、猜對角色名+2分</h2>
+        <table id="role-table">
+            <thead>
+                <tr>
+                    <th>題號</th>
+                    <th>答案（檔案名稱）</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>猜歌大挑戰（共 <span id="song-count">0</span> 題）猜對作品、歌名、團體、歌手、作者，每猜對一個<strong>都</strong>可以加一分</h2>
+        <table id="song-table">
+            <thead>
+                <tr>
+                    <th>題號</th>
+                    <th>答案（檔案名稱）</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <p class="note">此頁面僅供主持人使用，請勿給玩家觀看。</p>
+    </div>
+
+    <script>
+        // 透過 API 取得題庫並顯示（在主持人確認後）
+        let 挖洞猜角色題庫 = [];
+        let 猜歌大挑戰題庫 = [];
+
+        document.getElementById('reveal-button').addEventListener('click', async function() {
+            document.getElementById('protection-overlay').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            await loadDataAndFill();
+        });
+
+        async function loadDataAndFill() {
+            try {
+                const [roleRes, songRes] = await Promise.all([
+                    fetch('/api/Character'),
+                    fetch('/api/song')
+                ]);
+
+                if (!roleRes.ok || !songRes.ok) throw new Error('API 回傳錯誤');
+
+                挖洞猜角色題庫 = await roleRes.json();
+                猜歌大挑戰題庫 = await songRes.json();
+
+                fillTables();
+            } catch (err) {
+                console.error('讀取題庫失敗:', err);
+                alert('無法讀取題庫，請確認伺服器是否啟動並且 API 可用。');
+            }
+        }
+
+        function fillTables() {
+            // 挖洞猜角色
+            const roleTableBody = document.querySelector('#role-table tbody');
+            const roleCountSpan = document.getElementById('role-count');
+            roleTableBody.innerHTML = '';
+
+            if (Array.isArray(挖洞猜角色題庫) && 挖洞猜角色題庫.length > 0) {
+                roleCountSpan.textContent = 挖洞猜角色題庫.length;
+                挖洞猜角色題庫.forEach((item, index) => {
+                    const filename = typeof item === 'string' ? item : (item.答案 || item);
+                    const tr = document.createElement('tr');
+                    //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
+                    let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
+                    tr.innerHTML = `
+                        <td><strong>${index + 1}</strong></td>
+                        <td>${escapeHtml(answer)}</td>
+                    `;
+                    roleTableBody.appendChild(tr);
+                });
+            } else {
+                roleTableBody.innerHTML = '<tr><td colspan="2">無題目資料</td></tr>';
+            }
+
+            // 猜歌大挑戰
+            const songTableBody = document.querySelector('#song-table tbody');
+            const songCountSpan = document.getElementById('song-count');
+            songTableBody.innerHTML = '';
+
+            if (Array.isArray(猜歌大挑戰題庫) && 猜歌大挑戰題庫.length > 0) {
+                songCountSpan.textContent = 猜歌大挑戰題庫.length;
+                猜歌大挑戰題庫.forEach((item, index) => {
+                    const filename = typeof item === 'string' ? item : (item.答案 || item);
+                    const tr = document.createElement('tr');
+                    //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
+                    let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
+                    tr.innerHTML = `
+                        <td><strong>${index + 1}</strong></td>
+                        <td>${escapeHtml(answer)}</td>
+                    `;
+                    songTableBody.appendChild(tr);
+                });
+            } else {
+                songTableBody.innerHTML = '<tr><td colspan="2">無題目資料</td></tr>';
+            }
+        }
+
+        // 小型防 XSS 函數
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>

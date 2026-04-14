@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>挖洞猜角色</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            position: relative; /* 讓絕對定位元素相對於 body */
+            font-size: 26px;
+
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #image-container {
+            margin: 20px 0;
+            max-width: 80%;
+            max-height: 80%;
+            min-width: 1000px;
+            position: relative; /* 讓 grid-overlay 相對定位 */
+        }
+        #question-image {
+            width: 100%;
+            height: 100%;
+            border-bottom: 5px solid #ddd;
+            border-radius: 10px;
+            display: block;
+        }
+        #grid-overlay {
+            position: absolute;
+            top: -40px; /* 頂部標記在圖片上方外側 */
+            left: -40px; /* 左邊標記在圖片左邊外側 */
+            width: calc(100% + 40px); /* 擴大寬度容納左邊標記 */
+            height: calc(100% + 40px); /* 擴大高度容納頂部標記 */
+            display: grid;
+            grid-template-columns: 40px repeat(var(--cols), 1fr); /* 左邊數字 + 水平格子 */
+            grid-template-rows: 40px repeat(var(--rows), 1fr); /* 頂部字母 + 垂直格子 */
+            pointer-events: none; /* 初始不阻擋點擊，但按鈕會有 pointer-events: auto */
+        }
+        .grid-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.7); /* 半透明背景，讓標記清晰 */
+            border: 1px solid #ddd;
+            pointer-events: none; /* 標記不點擊 */
+            box-sizing: border-box; /* 新增：確保尺寸固定，包含邊框 */
+            overflow: hidden; /* 新增：隱藏溢出文字，防止撐大 */
+            white-space: nowrap; /* 新增：防止文字換行 */
+            text-overflow: ellipsis; /* 新增：溢出時顯示省略號 */
+            /* 選用：如果文字太大，可以添加 font-size: 14px; 以確保適合 40px 軌道 */
+            /* font-size: 14px; */
+        }
+        .grid-button {
+            background-color: #808080; /* 灰色覆蓋，隱藏圖片 */
+            border: 1px solid #ddd;
+            cursor: pointer;
+            pointer-events: auto; /* 可以點擊 */
+            transition: background-color 0.3s ease; /* 平滑消失效果 */
+            grid-column-start: 2; /* 按鈕從第二列開始，覆蓋圖片區域 */
+            grid-row-start: 2; /* 按鈕從第二行開始，覆蓋圖片區域 */
+            margin: 0;
+            border-radius: 0;
+            padding: 0;
+        }
+        .grid-button:hover {
+            background-color: #a9a9a9; /* hover 效果 */
+        }
+        .grid-button.clicked {
+            display: none; /* 點擊後消失 */
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        #answer {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2196F3;
+            display: none;
+        }
+        .ans-button{
+            background-color: #c033c2;
+
+        }
+        .ans-button:hover {
+            background-color: #935190;
+        }
+
+        .back-button {
+            background-color: #f44336;
+        }
+        .back-button:hover {
+            background-color: #d32f2f;
+        }
+        /* 新增樣式：左上角和右上角顯示 */
+        .question-info {
+            position: absolute;
+            top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+            background-color: rgba(255, 255, 255, 0.8); /* 輕微背景，讓文字更清晰 */
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 輕微陰影，美化 */
+        }
+        #current-question {
+            left: 20px;
+        }
+        #total-questions {
+            right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="current-question" class="question-info">目前第 1 題</div>
+    <div id="total-questions" class="question-info">(1 / 總題數)</div>
+    <h1>挖洞猜角色</h1>
+    <div id="image-container">
+        <img id="question-image" src="" alt="猜角色圖片">
+        <div id="grid-overlay"></div>
+    </div>
+    <div id="answer"></div>
+    <div class="button-container">
+        <button id="prev-button" onclick="previousQuestion()">上一題</button>
+        <button id="next-button" onclick="nextQuestion()">下一題</button>
+        <button class="ans-button" onclick="revealAnswer()">揭露答案</button>
+        <button class="back-button" onclick="backToHome()">回到主頁面</button>
+    </div>
+    <script>
+        const folderPath = './../question_bank/CharacterQuestionBank/'; // 圖片資料夾路徑
+        let currentIndex = 0;
+        let 挖洞猜角色題庫 = []; // 從 API 讀取的題庫
+
+        // 從 API 讀取題目
+        async function loadQuestionData() {
+            try {
+                const response = await fetch('/api/Character');
+                if (!response.ok) {
+                    throw new Error('讀取 API 失敗');
+                }
+                挖洞猜角色題庫 = await response.json();
+                console.log('題庫已載入:', 挖洞猜角色題庫);
+                
+                // 載入第一題
+                loadImage();
+            } catch (error) {
+                console.error('讀取題庫失敗:', error);
+                alert('無法讀取題庫，請確認伺服器是否正常運行！');
+            }
+        }
+
+        // 頁面載入時自動讀取 API
+        document.addEventListener('DOMContentLoaded', loadQuestionData);
+    </script>
+    <script>
+        const totalQuestions = () => 挖洞猜角色題庫.length; // 題目數量 = 陣列長度
+
+        function loadImage() {
+            const total = totalQuestions();
+            if (total === 0) {
+                document.getElementById('question-image').src = '';
+                document.getElementById('answer').style.display = 'none';
+                document.getElementById('current-question').textContent = '目前第 0 題';
+                document.getElementById('total-questions').textContent = '(0 / 0)';
+                alert('題庫中沒有圖片，請檢查資料夾！');
+                return;
+            }
+
+            const item = 挖洞猜角色題庫[currentIndex];
+            const filename = item.答案 || item; // 如果是物件，取答案；否則取字串
+            const rows = item.長 || 4; // 預設 4
+            const cols = item.寬 || 4; // 預設 4
+
+            const imagePath = folderPath + filename;
+            document.getElementById('question-image').src = imagePath;
+            document.getElementById('answer').style.display = 'none'; // 隱藏答案
+
+            // 更新左上和右上顯示
+            document.getElementById('current-question').textContent = '目前第 ' + (currentIndex + 1) + ' 題';
+            document.getElementById('total-questions').textContent = '(' + (currentIndex + 1) + ' / ' + total + ')';
+
+            // 動態禁用按鈕
+            document.getElementById('prev-button').disabled = (currentIndex === 0);
+            document.getElementById('next-button').disabled = (currentIndex === total - 1);
+
+            generateGridOverlay(rows, cols, item)
+        }
+
+        function generateGridOverlay(rows, cols, item) {
+            const overlay = document.getElementById('grid-overlay');
+            overlay.innerHTML = ''; // 清空舊格子
+            overlay.style.setProperty('--rows', rows);
+            overlay.style.setProperty('--cols', cols);
+
+            // 生成頂部字母標記 (A, B, C...)，在圖片上方外側
+            for (let col = 0; col < cols; col++) {
+                const label = document.createElement('div');
+                label.className = 'grid-label';
+                label.textContent = String.fromCharCode(65 + col); // A=65, B=66...
+                label.style.gridColumn = col + 2; // 從第二列開始
+                label.style.gridRow = 1; // 第一行（外側）
+                overlay.appendChild(label);
+            }
+
+            // 生成左邊數字標記 (1, 2, 3...)，在圖片左邊外側
+            for (let row = 0; row < rows; row++) {
+                const label = document.createElement('div');
+                label.className = 'grid-label';
+                label.textContent = (row + 1).toString();
+                label.style.gridColumn = 1; // 第一列（外側）
+                label.style.gridRow = row + 2; // 從第二行開始
+                overlay.appendChild(label);
+            }
+
+            // 先取得目前題目的預設挖開設定
+            const presetOpened = item.預設挖開 || [];
+
+            // 建立一個快速查詢的 Set，方便檢查哪些格子要預設挖開
+            const presetSet = new Set();
+            presetOpened.forEach(([r, c]) => {
+                if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                    presetSet.add(`${r}-${c}`);
+                }
+            });
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const button = document.createElement('button');
+                    button.className = 'grid-button';
+                    button.style.gridColumn = col + 2;
+                    button.style.gridRow = row + 2;
+                    button.onclick = function() {
+                        this.classList.add('clicked'); // 點擊後消失
+                    };
+
+                    // 如果這個位置在預設挖開清單中，直接加上 clicked 類別（消失）
+                    if (presetSet.has(`${row}-${col}`)) {
+                        button.classList.add('clicked');
+                    }
+
+                    overlay.appendChild(button);
+                }
+            }
+        }
+
+        function previousQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                loadImage();
+            }
+        }
+
+        function nextQuestion() {
+            if (currentIndex < totalQuestions() - 1) {
+                currentIndex++;
+                loadImage();
+            }
+        }
+
+        function revealAnswer() {
+            if (totalQuestions() === 0) return;
+            const item = 挖洞猜角色題庫[currentIndex];
+            let filename = item.答案 || item;
+            //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
+            let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
+            document.getElementById('answer').textContent = answer;
+            document.getElementById('answer').style.display = 'block';
+
+            // 新增：讓所有 grid-button 消失
+            const buttons = document.querySelectorAll('.grid-button');
+            buttons.forEach(button => {
+                button.classList.add('clicked');
+            });
+        }
+
+        function backToHome() {
+            // 從伺服器請求預設首頁路由
+            fetch('/')
+                .then(response => response.json())
+                .then(data => {
+                    window.location.href = data.home || '/';
+                })
+                .catch(error => {
+                    console.warn('無法從 API 獲取首頁路由，使用預設值:', error);
+                    window.location.href = '/'; // 備用預設值
+                });
+        }
+    </script>
+</body>
+</html>

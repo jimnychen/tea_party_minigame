@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>題目編輯器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .section h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .item {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .item:hover {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .item-info {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        .item-answer {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .item-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .item-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background: #1976D2;
+        }
+        
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+        
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+        }
+        
+        .btn-add:hover {
+            background: #45a049;
+        }
+        
+        .btn-save {
+            background: #FF9800;
+            color: white;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+        }
+        
+        .btn-save:hover {
+            background: #F57C00;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            max-width: 600px;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1em;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+        }
+        
+        .btn-cancel {
+            background: #ccc;
+            color: #333;
+        }
+        
+        .btn-cancel:hover {
+            background: #bbb;
+        }
+        
+        .btn-submit {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-submit:hover {
+            background: #5568d3;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.show {
+            display: block;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ddd;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .file-upload-section {
+            background: #f0f4ff;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .btn-upload {
+            background: #667eea;
+            color: white;
+            display: inline-block;
+        }
+        
+        .btn-upload:hover {
+            background: #5568d3;
+        }
+        
+        .upload-status {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .upload-progress {
+            width: 100%;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .upload-progress-bar {
+            height: 100%;
+            background: #667eea;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .file-list {
+            margin-top: 15px;
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            background: white;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #667eea;
+        }
+        
+        .file-item-name {
+            word-break: break-all;
+        }
+        
+        .btn-use-file {
+            background: #4CAF50;
+            color: white;
+            font-size: 0.8em;
+            padding: 5px 10px;
+        }
+        
+        .btn-use-file:hover {
+            background: #45a049;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 題目編輯器</h1>
+            <p>輕鬆管理遊戲題目和答案</p>
+        </header>
+
+        <div class="content">
+            <!-- 挖洞猜角色區域 -->
+            <div class="section">
+                <h2>挖洞猜角色題庫</h2>
+                <div id="Character-list"></div>
+                
+                
+            </div>
+
+            <!-- 猜歌大挑戰區域 -->
+            <div class="section">
+                <h2>猜歌大挑戰題庫</h2>
+                <div id="song-list"></div>
+                
+                
+            </div>
+        </div>
+
+        <div style="padding: 0 30px 30px; text-align: center;">
+            <button class="btn-save" onclick="saveAllSettings()">💾 保存所有變更</button>
+            <div id="status" class="status"></div>
+        </div>
+
+        <div class="footer">
+            <p>✓ 編輯完成後記得點擊「保存所有變更」以保存到伺服器</p>
+        </div>
+    </div>
+
+    <!-- 編輯模態框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">編輯題目</h3>
+            
+            <!-- 檔案上傳區段 -->
+            <div class="file-upload-section" id="uploadSection" style="display:none;">
+                <div style="margin-bottom: 15px;">
+                    <h4   style="color: #667eea; margin-bottom: 10px;">📁上傳檔案到題庫</h4>
+                    <h4   id = "FileFormat"style="color: #667eea; margin-bottom: 10px;"></h4>
+                    <div class="file-input-wrapper">
+                        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
+                        <input type="file" id="fileInput" onchange="uploadFile()">
+                    </div>
+                    <div class="upload-progress" id="progressContainer" style="display:none;">
+                        <div class="upload-progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="upload-status" id="uploadStatus"></div>
+                </div>
+                
+                <div class="file-list" id="fileList">
+                    <p style="color: #999;">已有的檔案：</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="answerInput">答案（檔案名稱）</label>
+                <input type="text" id="answerInput" placeholder="例如：作品：某某、角色名：某某.jpg">
+            </div>
+
+            <div id="Character-specific" style="display:none;">
+                <div class="form-group">
+                    <label for="rowsInput">長（行數）</label>
+                    <input type="number" id="rowsInput" value="9" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="colsInput">寬（列數）</label>
+                    <input type="number" id="colsInput" value="9" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="presetInput">預設挖開（JSON 格式，可選）</label>
+                    <textarea id="presetInput" placeholder='例如：[[0,0],[1,1]]'></textarea>
+                </div>
+            </div>
+
+            <div id="song-specific" style="display:none;">
+                <div class="form-group">
+                    <label>第一段時間（秒數）</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label for="segment1Start" style="font-size: 0.9em;">開始</label>
+                            <input type="number" id="segment1Start" placeholder="0" min="0" step="0.1">
+                        </div>
+                        <div>
+                            <label for="segment1End" style="font-size: 0.9em;">結束</label>
+                            <input type="number" id="segment1End" placeholder="2" min="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>第二段時間（秒數）</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label for="segment2Start" style="font-size: 0.9em;">開始</label>
+                            <input type="number" id="segment2Start" placeholder="20" min="0" step="0.1">
+                        </div>
+                        <div>
+                            <label for="segment2End" style="font-size: 0.9em;">結束</label>
+                            <input type="number" id="segment2End" placeholder="25" min="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>第三段時間（秒數）</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label for="segment3Start" style="font-size: 0.9em;">開始</label>
+                            <input type="number" id="segment3Start" placeholder="50" min="0" step="0.1">
+                        </div>
+                        <div>
+                            <label for="segment3End" style="font-size: 0.9em;">結束</label>
+                            <input type="number" id="segment3End" placeholder="60" min="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn-submit" onclick="saveItem()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSettings = {
+            挖洞猜角色題庫: [],
+            猜歌大挑戰題庫: []
+        };
+        let currentMode = null; // 'Character' 或 'song'
+        let editingIndex = -1; // -1 表示新增，否則為編輯的索引
+
+        // 初始化：讀取設定
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                if (!response.ok) throw new Error('讀取設定失敗');
+                currentSettings = await response.json();
+                renderLists();
+            } catch (error) {
+                console.error('讀取設定失敗:', error);
+                showStatus('Character', '讀取設定失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 渲染列表
+        function renderLists() {
+            renderList('Character');
+            renderList('song');
+        }
+
+        function renderList(type) {
+            const listId = type === 'Character' ? 'Character-list' : 'song-list';
+            const list = type === 'Character' ? currentSettings.挖洞猜角色題庫 : currentSettings.猜歌大挑戰題庫;
+            let html = `
+            <div class="item">
+                <button class="btn-add" onclick="openModal('${type}')">+ 新增題目</button>
+            </div>`;
+             html += list.map((item, index) => `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-answer">${escapeHtml(item.答案)}</div>
+                        <div class="item-meta">
+                            ${type === 'Character' 
+                                ? `長: ${item.長}, 寬: ${item.寬}` 
+                                : `第一段: ${item.第一段.開始}~${item.第一段.結束}s`
+                            }
+                        </div>
+                    </div>
+                    <div class="item-buttons">
+                        <button class="btn-edit" onclick="editItem('${type}', ${index})">編輯</button>
+                        <button class="btn-delete" onclick="deleteItem('${type}', ${index})">刪除</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById(listId).innerHTML = html || '<p style="color:#999;">暫無題目</p>';
+        }
+
+        // 開啟模態框
+        function openModal(type) {
+            currentMode = type;
+            editingIndex = -1;
+            document.getElementById('modalTitle').textContent = type === 'Character' ? '新增角色題目' : '新增歌曲題目';
+            document.getElementById('FileFormat').textContent = type === 'Character' ? '檔案格式：(作品：{作品}、角色名：{角色}.jpg)' : '檔案格式：(作品：{作品}、歌名：{歌名}、歌手：{歌手}.mp3)';
+            document.getElementById('answerInput').value = '';
+            document.getElementById('rowsInput').value = 9;
+            document.getElementById('colsInput').value = 9;
+            document.getElementById('presetInput').value = '';
+            document.getElementById('segment1Start').value = '';
+            document.getElementById('segment1End').value = '';
+            document.getElementById('segment2Start').value = '';
+            document.getElementById('segment2End').value = '';
+            document.getElementById('segment3Start').value = '';
+            document.getElementById('segment3End').value = '';
+            
+            // 重置檔案上傳
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadStatus').innerHTML = '';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'block';
+            
+            document.getElementById('Character-specific').style.display = type === 'Character' ? 'block' : 'none';
+            document.getElementById('song-specific').style.display = type === 'song' ? 'block' : 'none';
+            
+            // 載入已有檔案列表
+            loadFileList(type);
+            
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        // 載入檔案列表
+        async function loadFileList(type) {
+            try {
+                const response = await fetch(`/api/files?type=${type}`);
+                if (!response.ok) throw new Error('載入檔案列表失敗');
+                const data = await response.json();
+                
+                const fileList = document.getElementById('fileList');
+                if (data.files && data.files.length > 0) {
+                    const html = '<p style="color: #999; margin-bottom: 10px;">已有的檔案（點擊使用）：</p>' + 
+                        data.files.map(filename => `
+                            <div class="file-item">
+                                <span class="file-item-name" title="${filename}">${escapeHtml(filename)}</span>
+                                <button class="btn-use-file" onclick="useFile('${escapeHtml(filename)}')">使用</button>
+                            </div>
+                        `).join('');
+                    fileList.innerHTML = html;
+                } else {
+                    fileList.innerHTML = '<p style="color: #999;">暫無檔案</p>';
+                }
+            } catch (error) {
+                console.error('載入檔案列表失敗:', error);
+                document.getElementById('fileList').innerHTML = '<p style="color: #999;">無法載入檔案列表</p>';
+            }
+        }
+
+        // 上傳檔案
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                document.getElementById('uploadStatus').innerHTML = '上傳中...';
+                document.getElementById('progressContainer').style.display = 'block';
+                
+                const response = await fetch(`/api/upload?type=${currentMode}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('上傳失敗');
+                const result = await response.json();
+                
+                document.getElementById('uploadStatus').innerHTML = `✓ 上傳成功：${escapeHtml(result.filename)}`;
+                document.getElementById('progressBar').style.width = '100%';
+                
+                // 重新載入檔案列表
+                setTimeout(() => loadFileList(currentMode), 500);
+            } catch (error) {
+                document.getElementById('uploadStatus').innerHTML = `✗ 上傳失敗：${error.message}`;
+            }
+        }
+
+        // 使用已上傳的檔案
+        function useFile(filename) {
+            document.getElementById('answerInput').value = filename;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadStatus').innerHTML = '';
+            document.getElementById('progressContainer').style.display = 'none';
+        }
+
+        // 編輯項目
+        function editItem(type, index) {
+            currentMode = type;
+            editingIndex = index;
+            const list = type === 'Character' ? currentSettings.挖洞猜角色題庫 : currentSettings.猜歌大挑戰題庫;
+            const item = list[index];
+            
+            document.getElementById('modalTitle').textContent = type === 'Character' ? '編輯角色題目' : '編輯歌曲題目';
+            document.getElementById('answerInput').value = item.答案;
+            
+            if (type === 'Character') {
+                document.getElementById('rowsInput').value = item.長;
+                document.getElementById('colsInput').value = item.寬;
+                document.getElementById('presetInput').value = item.預設挖開 ? JSON.stringify(item.預設挖開) : '';
+                document.getElementById('Character-specific').style.display = 'block';
+                document.getElementById('song-specific').style.display = 'none';
+            } else {
+                document.getElementById('segment1Start').value = item.第一段.開始;
+                document.getElementById('segment1End').value = item.第一段.結束;
+                document.getElementById('segment2Start').value = item.第二段.開始;
+                document.getElementById('segment2End').value = item.第二段.結束;
+                document.getElementById('segment3Start').value = item.第三段.開始;
+                document.getElementById('segment3End').value = item.第三段.結束;
+                document.getElementById('Character-specific').style.display = 'none';
+                document.getElementById('song-specific').style.display = 'block';
+            }
+            
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        // 關閉模態框
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('show');
+            editingIndex = -1;
+            currentMode = null;
+        }
+
+        // 保存項目
+        function saveItem() {
+            try {
+                const answer = document.getElementById('answerInput').value.trim();
+                if (!answer) {
+                    alert('請輸入答案！');
+                    return;
+                }
+                
+                let newItem;
+                if (currentMode === 'Character') {
+                    const preset = document.getElementById('presetInput').value.trim();
+                    newItem = {
+                        答案: answer,
+                        長: parseInt(document.getElementById('rowsInput').value),
+                        寬: parseInt(document.getElementById('colsInput').value)
+                    };
+                    if (preset) {
+                        newItem.預設挖開 = JSON.parse(preset);
+                    }
+                } else {
+                    // 驗證歌曲時間輸入
+                    const seg1Start = parseFloat(document.getElementById('segment1Start').value);
+                    const seg1End = parseFloat(document.getElementById('segment1End').value);
+                    const seg2Start = parseFloat(document.getElementById('segment2Start').value);
+                    const seg2End = parseFloat(document.getElementById('segment2End').value);
+                    const seg3Start = parseFloat(document.getElementById('segment3Start').value);
+                    const seg3End = parseFloat(document.getElementById('segment3End').value);
+                    
+                    if (isNaN(seg1Start) || isNaN(seg1End) || isNaN(seg2Start) || isNaN(seg2End) || isNaN(seg3Start) || isNaN(seg3End)) {
+                        alert('請填寫所有時間段的開始和結束秒數！');
+                        return;
+                    }
+                    
+                    newItem = {
+                        答案: answer,
+                        第一段: { 開始: seg1Start, 結束: seg1End },
+                        第二段: { 開始: seg2Start, 結束: seg2End },
+                        第三段: { 開始: seg3Start, 結束: seg3End }
+                    };
+                }
+                
+                const list = currentMode === 'Character' ? currentSettings.挖洞猜角色題庫 : currentSettings.猜歌大挑戰題庫;
+                if (editingIndex === -1) {
+                    list.push(newItem);
+                } else {
+                    list[editingIndex] = newItem;
+                }
+                
+                renderLists();
+                closeModal();
+            } catch (error) {
+                alert('資料格式錯誤: ' + error.message);
+            }
+        }
+
+        // 刪除項目
+        function deleteItem(type, index) {
+            if (!confirm('確定要刪除這個題目嗎？')) return;
+            
+            const list = type === 'Character' ? currentSettings.挖洞猜角色題庫 : currentSettings.猜歌大挑戰題庫;
+            list.splice(index, 1);
+            renderLists();
+        }
+
+        // 保存所有設定
+        async function saveAllSettings() {
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentSettings)
+                });
+                
+                if (!response.ok) throw new Error('保存失敗');
+                const result = await response.json();
+                
+                showStatus('Character', '✓ 所有設定已成功保存！', 'success');
+                showStatus('song', '✓ 所有設定已成功保存！', 'success');
+            } catch (error) {
+                showStatus('Character', '✗ 保存失敗: ' + error.message, 'error');
+                showStatus('song', '✗ 保存失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 顯示狀態訊息
+        function showStatus(type, message, status) {
+            const element = document.getElementById('status');
+            element.textContent = message;
+            element.className = `status show ${status}`;
+            setTimeout(() => element.classList.remove('show'), 3000);
+        }
+
+        // HTML 轉義
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // 點擊模態框外部關閉
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') closeModal();
+        });
+
+        // 初始化
+        loadSettings();
+    </script>
+</body>
+</html>
