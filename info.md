@@ -48,4 +48,6 @@
 ### 最後不要忘記！
 **點「💾 保存所有變更」**
 
+### 小撇步
+備份 QuestionConfig.json 跟 question_bank 資料夾以便題庫轉移
 

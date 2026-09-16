@@ -31,3 +31,4 @@
 ## 額外資訊
 - 關於系統的操作指南，請參考info.md
 - 關於活動使用參考流程，請參考TeaParty.md
+- BUG回報或是功能需求請到 https://github.com/jimnychen/tea_party_minigame/issues 回報
