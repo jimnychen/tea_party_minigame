@@ -472,11 +472,18 @@
             </div>
             
             <div class="form-group">
-                <label for="answerInput">答案（檔案名稱）</label>
-                <input type="text" id="answerInput" placeholder="例如：作品：某某、角色名：某某.jpg">
+                <label for="filename">檔案名稱</label>
+                <input type="text" id="filename" placeholder="例如：作品：某某、角色名：某某.jpg">
             </div>
-
             <div id="Character-specific" style="display:none;">
+                <div class="form-group">
+                    <label for="characterName">角色名稱</label>
+                    <input type="text" id="characterName" >
+                </div>
+                <div class="form-group">
+                    <label for="animeName">作品名稱</label>
+                    <input type="text" id="animeName" >
+                 </div>
                 <div class="form-group">
                     <label for="rowsInput">長（行數）</label>
                     <input type="number" id="rowsInput" value="9" min="1">
@@ -492,6 +499,18 @@
             </div>
 
             <div id="song-specific" style="display:none;">
+                <div class="form-group">
+                    <label for="animeName">作品名稱</label>
+                    <input type="text" id="animeName" >
+                </div>
+                    <div class="form-group">
+                    <label for="songName">歌曲名稱</label>
+                    <input type="text" id="songName" >
+                </div>
+                <div class="form-group">
+                    <label for="singerName">歌手名稱</label>
+                    <input type="text" id="singerName" >
+                </div>
                 <div class="form-group">
                     <label>第一段時間（秒數）</label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -601,7 +620,7 @@
             editingIndex = -1;
             document.getElementById('modalTitle').textContent = type === 'Character' ? '新增角色題目' : '新增歌曲題目';
             document.getElementById('FileFormat').textContent = type === 'Character' ? '檔案格式：(作品：{作品}、角色名：{角色}.jpg)' : '檔案格式：(作品：{作品}、歌名：{歌名}、歌手：{歌手}.mp3)';
-            document.getElementById('answerInput').value = '';
+            document.getElementById('filename').value = '';
             document.getElementById('rowsInput').value = 9;
             document.getElementById('colsInput').value = 9;
             document.getElementById('presetInput').value = '';
@@ -687,7 +706,7 @@
 
         // 使用已上傳的檔案
         function useFile(filename) {
-            document.getElementById('answerInput').value = filename;
+            document.getElementById('filename').value = filename;
             document.getElementById('fileInput').value = '';
             document.getElementById('uploadStatus').innerHTML = '';
             document.getElementById('progressContainer').style.display = 'none';
@@ -701,15 +720,20 @@
             const item = list[index];
             
             document.getElementById('modalTitle').textContent = type === 'Character' ? '編輯角色題目' : '編輯歌曲題目';
-            document.getElementById('answerInput').value = item.答案;
+            document.getElementById('filename').value = item.檔案名稱;
             
             if (type === 'Character') {
+                document.getElementById('characterName').value = item.角色名稱;
+                document.getElementById('animeName').value = item.作品名稱;
                 document.getElementById('rowsInput').value = item.長;
                 document.getElementById('colsInput').value = item.寬;
                 document.getElementById('presetInput').value = item.預設挖開 ? JSON.stringify(item.預設挖開) : '';
                 document.getElementById('Character-specific').style.display = 'block';
                 document.getElementById('song-specific').style.display = 'none';
             } else {
+                document.getElementById('animeName').value = item.作品名稱;
+                document.getElementById('songName').value = item.歌曲名稱;
+                document.getElementById('singerName').value = item.歌手名稱;
                 document.getElementById('segment1Start').value = item.第一段.開始;
                 document.getElementById('segment1End').value = item.第一段.結束;
                 document.getElementById('segment2Start').value = item.第二段.開始;
@@ -733,17 +757,21 @@
         // 保存項目
         function saveItem() {
             try {
-                const answer = document.getElementById('answerInput').value.trim();
-                if (!answer) {
+                const filename = document.getElementById('filename').value.trim();
+                if (!filename) {
                     alert('請輸入答案！');
                     return;
                 }
                 
                 let newItem;
                 if (currentMode === 'Character') {
+                    const CharacterName = document.getElementById('characterName').value.trim();
+                    const AnimeName = document.getElementById('animeName').value.trim();
                     const preset = document.getElementById('presetInput').value.trim();
                     newItem = {
-                        答案: answer,
+                        檔案名稱: filename,
+                        角色名稱: CharacterName,
+                        作品名稱: AnimeName,
                         長: parseInt(document.getElementById('rowsInput').value),
                         寬: parseInt(document.getElementById('colsInput').value)
                     };
@@ -752,6 +780,9 @@
                     }
                 } else {
                     // 驗證歌曲時間輸入
+                    const animeName = document.getElementById('animeName').value.trim();
+                    const songName = document.getElementById('songName').value.trim();
+                    const singerName = document.getElementById('singerName').value.trim();
                     const seg1Start = parseFloat(document.getElementById('segment1Start').value);
                     const seg1End = parseFloat(document.getElementById('segment1End').value);
                     const seg2Start = parseFloat(document.getElementById('segment2Start').value);
@@ -765,7 +796,10 @@
                     }
                     
                     newItem = {
-                        答案: answer,
+                        檔案名稱: filename,
+                        作品名稱: animeName,
+                        歌曲名稱: songName,
+                        歌手名稱: singerName,   
                         第一段: { 開始: seg1Start, 結束: seg1End },
                         第二段: { 開始: seg2Start, 結束: seg2End },
                         第三段: { 開始: seg3Start, 結束: seg3End }

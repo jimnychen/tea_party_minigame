@@ -57,6 +57,14 @@ const upload = multer({
 
 // 讀取 JSON 格式的題目設定
 const settingsPath = path.join(__dirname, 'QuestionConfig.json');
+if (!fs.existsSync(settingsPath)) {
+    // 如果設定檔不存在，建立一個預設的空設定檔
+    const defaultSettings = {
+        挖洞猜角色題庫: [],
+        猜歌大挑戰題庫: []
+    }
+    fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings), 'utf-8');
+}
 let settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
 let 挖洞猜角色題庫 = settings.挖洞猜角色題庫;
 let 猜歌大挑戰題庫 = settings.猜歌大挑戰題庫;
