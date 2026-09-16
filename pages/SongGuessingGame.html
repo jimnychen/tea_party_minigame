@@ -276,7 +276,7 @@
             hideDancingGifs(); // 切題時確保隱藏
 
             const item = 猜歌大挑戰題庫[currentIndex];
-            const filename = item.答案 || item;
+            const filename = item.檔案名稱 || item;
             const videoPath = folderPath + filename;
             video.src = videoPath;
 
@@ -349,8 +349,7 @@
 
             const item = 猜歌大挑戰題庫[currentIndex];
             let filename = item.檔案名稱 || item;
-            let singer = item.歌手名稱 ;
-            let Name = item.歌曲名稱 ;
+            let singer = item.歌手名稱 ;            let Name = item.歌曲名稱 ;
             let amine = item.作品名稱 ;
             let answer = `歌曲名稱: ${Name}，歌手名稱: ${singer}，作品名稱: ${amine}`;
             document.getElementById('answer').textContent = '答案：' + answer;

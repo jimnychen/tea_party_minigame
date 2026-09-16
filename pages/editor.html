@@ -616,14 +616,15 @@
             
             document.getElementById(listId).innerHTML = html || '<p style="color:#999;">暫無題目</p>';
         }
-
-        // 開啟模態框
-        function openModal(type) {
-            currentMode = type;
-            editingIndex = -1;
-            document.getElementById('modalTitle').textContent = type === 'Character' ? '新增角色題目' : '新增歌曲題目';
-            document.getElementById('FileFormat').textContent = type === 'Character' ? '檔案格式：(作品：{作品}、角色名：{角色}.jpg)' : '檔案格式：(作品：{作品}、歌名：{歌名}、歌手：{歌手}.mp3)';
+        function initAnswerTextField() {
             document.getElementById('filename').value = '';
+            document.getElementById('characterName').value = '';
+            document.getElementById('animeNameCharacter').value = '';
+            document.getElementById('animeNameSong').value = '';
+            document.getElementById('songName').value = '';
+            document.getElementById('singerName').value = '';
+        }
+        function initSettingsFields() {
             document.getElementById('rowsInput').value = 9;
             document.getElementById('colsInput').value = 9;
             document.getElementById('presetInput').value = '';
@@ -633,21 +634,26 @@
             document.getElementById('segment2End').value = '';
             document.getElementById('segment3Start').value = '';
             document.getElementById('segment3End').value = '';
-            document.getElementById('animeNameCharacter').value = '';
-            document.getElementById('animeNameSong').value = '';
-            
-            // 重置檔案上傳
+        }
+        function initFileUpload() {
             document.getElementById('fileInput').value = '';
             document.getElementById('uploadStatus').innerHTML = '';
-            document.getElementById('progressContainer').style.display = 'none';
-            document.getElementById('uploadSection').style.display = 'block';
-            
+            document.getElementById('progressContainer').style.display = 'none'
+        }
+        // 開啟模態框
+        function openModal(type) {
+            currentMode = type;
+            editingIndex = -1;
+            document.getElementById('modalTitle').textContent = type === 'Character' ? '新增角色題目' : '新增歌曲題目';
+            document.getElementById('FileFormat').textContent = type === 'Character' ? '檔案格式：(作品：{作品}、角色名：{角色}.jpg)' : '檔案格式：(作品：{作品}、歌名：{歌名}、歌手：{歌手}.mp3)';
             document.getElementById('Character-specific').style.display = type === 'Character' ? 'block' : 'none';
             document.getElementById('song-specific').style.display = type === 'song' ? 'block' : 'none';
-            
+            initAnswerTextField();
+            initSettingsFields();
+            initFileUpload();
             // 載入已有檔案列表
             loadFileList(type);
-            
+            document.getElementById('uploadSection').style.display = 'block';
             document.getElementById('editModal').classList.add('show');
         }
 
@@ -701,7 +707,7 @@
                 
                 document.getElementById('uploadStatus').innerHTML = `✓ 上傳成功：${escapeHtml(result.filename)}`;
                 document.getElementById('progressBar').style.width = '100%';
-                
+                document.getElementById('filename').value = result.filename;
                 // 重新載入檔案列表
                 setTimeout(() => loadFileList(currentMode), 500);
             } catch (error) {
