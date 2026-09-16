@@ -201,7 +201,7 @@
             }
 
             const item = 挖洞猜角色題庫[currentIndex];
-            const filename = item.答案 || item; // 如果是物件，取答案；否則取字串
+            const filename = item.檔案名稱 || item; // 如果是物件，取答案；否則取字串
             const rows = item.長 || 4; // 預設 4
             const cols = item.寬 || 4; // 預設 4
 
@@ -294,10 +294,11 @@
         function revealAnswer() {
             if (totalQuestions() === 0) return;
             const item = 挖洞猜角色題庫[currentIndex];
-            let filename = item.答案 || item;
-            //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
-            let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
-            document.getElementById('answer').textContent = answer;
+            let filename = item.檔案名稱 || item;
+            let Name = item.角色名稱 ;
+            let amine = item.作品名稱 ;
+            let answer = `角色名稱: ${Name}，作品名稱: ${amine}`;
+            document.getElementById('answer').textContent = '答案：' + answer;
             document.getElementById('answer').style.display = 'block';
 
             // 新增：讓所有 grid-button 消失

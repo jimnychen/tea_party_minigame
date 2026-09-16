@@ -348,9 +348,11 @@
             stopPlayback();
 
             const item = 猜歌大挑戰題庫[currentIndex];
-            const filename = item.答案 || item;
-            //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
-            let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
+            let filename = item.檔案名稱 || item;
+            let singer = item.歌手名稱 ;
+            let Name = item.歌曲名稱 ;
+            let amine = item.作品名稱 ;
+            let answer = `歌曲名稱: ${Name}，歌手名稱: ${singer}，作品名稱: ${amine}`;
             document.getElementById('answer').textContent = '答案：' + answer;
             document.getElementById('answer').style.display = 'block';
 

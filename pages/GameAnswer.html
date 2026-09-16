@@ -170,10 +170,12 @@
             if (Array.isArray(挖洞猜角色題庫) && 挖洞猜角色題庫.length > 0) {
                 roleCountSpan.textContent = 挖洞猜角色題庫.length;
                 挖洞猜角色題庫.forEach((item, index) => {
-                    const filename = typeof item === 'string' ? item : (item.答案 || item);
+                    const filename = typeof item === 'string' ? item : (item.檔案名稱 || item);
                     const tr = document.createElement('tr');
                     //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
-                    let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
+                    let Name = item.角色名稱 ;
+                    let amine = item.作品名稱 ;
+                    let answer = `角色名稱: ${Name}，作品名稱: ${amine}`;
                     tr.innerHTML = `
                         <td><strong>${index + 1}</strong></td>
                         <td>${escapeHtml(answer)}</td>
@@ -192,10 +194,12 @@
             if (Array.isArray(猜歌大挑戰題庫) && 猜歌大挑戰題庫.length > 0) {
                 songCountSpan.textContent = 猜歌大挑戰題庫.length;
                 猜歌大挑戰題庫.forEach((item, index) => {
-                    const filename = typeof item === 'string' ? item : (item.答案 || item);
+                    const filename = typeof item === 'string' ? item : (item.檔案名稱 || item);
                     const tr = document.createElement('tr');
-                    //TODO 修改後端json讓檔名與答案分開，這裡就不需要再處理
-                    let answer = filename.replace(/\.[^/.]+$/, ""); // 移除副檔名
+                    let Name = item.歌曲名稱 ;
+                    let amine = item.作品名稱 ;
+                    let singer = item.歌手名稱 ;
+                    let answer = `歌曲名稱: ${Name}，歌手名稱: ${singer}，作品名稱: ${amine}`;
                     tr.innerHTML = `
                         <td><strong>${index + 1}</strong></td>
                         <td>${escapeHtml(answer)}</td>

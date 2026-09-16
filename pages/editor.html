@@ -477,13 +477,13 @@
             </div>
             <div id="Character-specific" style="display:none;">
                 <div class="form-group">
+                    <label for="animeNameCharacter">作品名稱</label>
+                    <input type="text" id="animeNameCharacter" >
+                </div>
+                <div class="form-group">
                     <label for="characterName">角色名稱</label>
                     <input type="text" id="characterName" >
                 </div>
-                <div class="form-group">
-                    <label for="animeName">作品名稱</label>
-                    <input type="text" id="animeName" >
-                 </div>
                 <div class="form-group">
                     <label for="rowsInput">長（行數）</label>
                     <input type="number" id="rowsInput" value="9" min="1">
@@ -500,8 +500,8 @@
 
             <div id="song-specific" style="display:none;">
                 <div class="form-group">
-                    <label for="animeName">作品名稱</label>
-                    <input type="text" id="animeName" >
+                    <label for="animeNameSong">作品名稱</label>
+                    <input type="text" id="animeNameSong" >
                 </div>
                     <div class="form-group">
                     <label for="songName">歌曲名稱</label>
@@ -596,13 +596,16 @@
              html += list.map((item, index) => `
                 <div class="item">
                     <div class="item-info">
-                        <div class="item-answer">${escapeHtml(item.答案)}</div>
-                        <div class="item-meta">
-                            ${type === 'Character' 
-                                ? `長: ${item.長}, 寬: ${item.寬}` 
-                                : `第一段: ${item.第一段.開始}~${item.第一段.結束}s`
-                            }
-                        </div>
+                        ${type === 'Character' 
+                            ? `角色：${escapeHtml(item.角色名稱)}，作品：${escapeHtml(item.作品名稱)}` 
+                            : `歌曲：${escapeHtml(item.歌曲名稱)}，歌手：${escapeHtml(item.歌手名稱)}，作品：${escapeHtml(item.作品名稱)}`
+                        }
+                    <div class="item-meta">
+                        ${type === 'Character' 
+                           ? `長: ${item.長}, 寬: ${item.寬}` 
+                           : `第一段: ${item.第一段.開始}~${item.第一段.結束}s`
+                        }
+                    </div>
                     </div>
                     <div class="item-buttons">
                         <button class="btn-edit" onclick="editItem('${type}', ${index})">編輯</button>
@@ -630,6 +633,8 @@
             document.getElementById('segment2End').value = '';
             document.getElementById('segment3Start').value = '';
             document.getElementById('segment3End').value = '';
+            document.getElementById('animeNameCharacter').value = '';
+            document.getElementById('animeNameSong').value = '';
             
             // 重置檔案上傳
             document.getElementById('fileInput').value = '';
@@ -724,14 +729,14 @@
             
             if (type === 'Character') {
                 document.getElementById('characterName').value = item.角色名稱;
-                document.getElementById('animeName').value = item.作品名稱;
+                document.getElementById('animeNameCharacter').value = item.作品名稱;
                 document.getElementById('rowsInput').value = item.長;
                 document.getElementById('colsInput').value = item.寬;
                 document.getElementById('presetInput').value = item.預設挖開 ? JSON.stringify(item.預設挖開) : '';
                 document.getElementById('Character-specific').style.display = 'block';
                 document.getElementById('song-specific').style.display = 'none';
             } else {
-                document.getElementById('animeName').value = item.作品名稱;
+                document.getElementById('animeNameSong').value = item.作品名稱;
                 document.getElementById('songName').value = item.歌曲名稱;
                 document.getElementById('singerName').value = item.歌手名稱;
                 document.getElementById('segment1Start').value = item.第一段.開始;
@@ -766,7 +771,7 @@
                 let newItem;
                 if (currentMode === 'Character') {
                     const CharacterName = document.getElementById('characterName').value.trim();
-                    const AnimeName = document.getElementById('animeName').value.trim();
+                    const AnimeName = document.getElementById('animeNameCharacter').value.trim();
                     const preset = document.getElementById('presetInput').value.trim();
                     newItem = {
                         檔案名稱: filename,
@@ -780,7 +785,7 @@
                     }
                 } else {
                     // 驗證歌曲時間輸入
-                    const animeName = document.getElementById('animeName').value.trim();
+                    const animeName = document.getElementById('animeNameSong').value.trim();
                     const songName = document.getElementById('songName').value.trim();
                     const singerName = document.getElementById('singerName').value.trim();
                     const seg1Start = parseFloat(document.getElementById('segment1Start').value);
